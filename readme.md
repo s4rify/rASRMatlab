@@ -21,6 +21,10 @@ The function will show a meesage in the command window of Matlab, informing that
 ## Dependencies
 The Riemannian geometry functions are implemented in the Manopt toolbox [2] which needs to be in Matlab's path as well.
 
-[0] https://sccn.ucsd.edu/eeglab/index.php
-[1] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4710679/
-[2] https://www.manopt.org/index.html
+## Support
+Please drop me a mail if you have any questions, fork this work to improve it or open an issue in this repository if you have any problems.
+
+# References
+[0] https://sccn.ucsd.edu/eeglab/index.php <br/>
+[1] https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4710679/ <br/>
+[2] https://www.manopt.org/index.html <br/>
