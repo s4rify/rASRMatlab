@@ -146,13 +146,11 @@ for i=1:splits
         if usegpu && length(range) > 1000
             try X = gpuArray(X); catch,end; end
 
-        %% the Riemann version requires the sample covariance matrix here:
+        %% the Riemann version uses the sample covariance matrix here:
         % P = (1/samplesintrial) * trialvector_i * trialvector_i'
         % Interestingly, this is sufficient to reach the same cleaning quality than the
-        % original ASR method, even without the huge Xcov struct that they compute.
-
+        % original ASR method, even without the huge Xcov matrix which is computed in every loop iteration.
         SCM = (1/S) * (X * X');     % channels x channels
-
 
         % if we have a previous covariance matrix, use it to compute the average to make
         % the current covariance matrix more stable
@@ -165,10 +163,6 @@ for i=1:splits
             A(:,:,1) = SCM;
             A(:,:,2) = state.cov;
             Xcov = positive_definite_karcher_mean(A);   % from Manopt toolbox
-
-            % original statement
-            %[Xcov,state.cov] = moving_average(N,reshape(bsxfun(@times,reshape(X,1,C,[]),reshape(X,C,1,[])),C*C,[]),state.cov);
-
         else
             % we do not have a previous matrix to average, we use SCM as is
             Xcov = SCM;
@@ -183,12 +177,15 @@ for i=1:splits
             update_at = [1 update_at];
             state.last_R = eye(C);
         end
+%         [Vo, Do] = eig(Xcov)
+%         [Do, ordero] = sort(reshape(diag(Do),1,C));
+%         Vo = Vo(:,ordero);
 
         %%%%%%% we moved this outside the loop because we only have one covariance matrix
-        % this should be exchanged by using a geometry-aware decomposition.
-        [V,D] = eig(Xcov);
-        [D,order] = sort(reshape(diag(D),1,C)); V = V(:,order);
-        %D = reshape(diag(D),1,C);
+        [Vsolved,V, D] = nonlinear_eigenspace(Xcov, C);
+        [D, order] = sort(reshape(diag(D),1,C));
+        V = V(:,order);
+        
         % determine which components to keep (variance below directional threshold or not admissible for rejection)
         keep = D<sum((T*V).^2) | (1:C)<(C-0.66);
 
@@ -197,6 +194,7 @@ for i=1:splits
         % update the reconstruction matrix R (reconstruct artifact components using the mixing matrix)
         if ~trivial
             R = real(M*pinv(bsxfun(@times,keep',V'*M))*V');
+            disp('UPDATED R');
         else
             R = eye(C);
         end
@@ -233,39 +231,6 @@ outdata = data(:,1:(end-P));
 outstate = state;
 
 
-
-function [X,Zf] = moving_average(N,X,Zi)
-% Run a moving-average filter along the second dimension of the data.
-% [X,Zf] = moving_average(N,X,Zi)
-%
-% In:
-%   N : filter length in samples
-%   X : data matrix [#Channels x #Samples]
-%   Zi : initial filter conditions (default: [])
-%
-% Out:
-%   X : the filtered data
-%   Zf : final filter conditions
-%
-%                           Christian Kothe, Swartz Center for Computational Neuroscience, UCSD
-%                           2012-01-10
-
-if nargin <= 2 || isempty(Zi)
-    Zi = zeros(size(X,1),N); end
-
-% pre-pend initial state & get dimensions
-Y = [Zi X]; M = size(Y,2);
-% get alternating index vector (for additions & subtractions)
-I = [1:M-N; 1+N:M];
-% get sign vector (also alternating, and includes the scaling)
-S = [-ones(1,M-N); ones(1,M-N)]/N;
-% run moving average
-X = cumsum(bsxfun(@times,Y(:,I(:)),S(:)'),2);
-% read out result
-X = X(:,2:2:end);
-
-if nargout > 1
-    Zf = [-(X(:,end)*N-Y(:,end-N+1)) Y(:,end-N+2:end)]; end
 
 function result = hlp_memfree
 % Get the amount of free physical memory, in bytes
