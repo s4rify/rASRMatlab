@@ -177,12 +177,9 @@ for i=1:splits
             update_at = [1 update_at];
             state.last_R = eye(C);
         end
-%         [Vo, Do] = eig(Xcov)
-%         [Do, ordero] = sort(reshape(diag(Do),1,C));
-%         Vo = Vo(:,ordero);
+       
 
-        %%%%%%% we moved this outside the loop because we only have one covariance matrix
-        [Vsolved,V, D] = nonlinear_eigenspace(Xcov, C);
+        [Vsolved,V, D] = rasr_nonlinear_eigenspace(Xcov, C);
         [D, order] = sort(reshape(diag(D),1,C));
         V = V(:,order);
         
