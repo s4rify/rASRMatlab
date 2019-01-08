@@ -95,14 +95,14 @@ function [outdata,outstate, Y] = asr_process(data,srate,state,windowlen,lookahea
 
 disp('THIS IS RIEMANN ADAPTED PROCESSING!!!');
 if nargin < 4 || isempty(windowlen)
-    windowlen = 0.5; end
+    windowlen = 0.1; end
 windowlen = max(windowlen,1.5*size(data,1)/srate);
 if nargin < 5 || isempty(lookahead)
     lookahead = windowlen/2; end
 if nargin < 6 || isempty(stepsize)
-    stepsize = 32; end
+    stepsize = 4; end 
 if nargin < 7 || isempty(maxdims)
-    maxdims = 0.66; end
+    maxdims = 1; end 
 if nargin < 9 || isempty(usegpu)
     usegpu = false; end
 if nargin < 8 || isempty(maxmem)
@@ -147,18 +147,10 @@ for i=1:splits
             try X = gpuArray(X); catch,end; end
 
         %% the Riemann version uses the sample covariance matrix here:
-        % P = (1/samplesintrial) * trialvector_i * trialvector_i'
-        % Interestingly, this is sufficient to reach the same cleaning quality than the
-        % original ASR method, even without the huge Xcov matrix which is computed in every loop iteration.
         SCM = (1/S) * (X * X');     % channels x channels
-
         % if we have a previous covariance matrix, use it to compute the average to make
         % the current covariance matrix more stable
         if ~isempty(state.cov)
-            % For a task as simple as averaging two matrices, it may occur that the
-            % determinant of the average is larger than any of the two matrices. (Horev15):
-            % swelling effect -> compute Karcher mean instead of Euclidean moving average
-            % compose input for karcher mean functon
             A = zeros([C,C,2]);
             A(:,:,1) = SCM;
             A(:,:,2) = state.cov;
@@ -168,9 +160,6 @@ for i=1:splits
             Xcov = SCM;
         end
 
-        % in case of Karcher Mean Matrix, adapt update_at to an evenly spaced variable
-        % with 30 samples or something
-        % update_at = [1 : 30 : (range-30)];
         update_at = min(stepsize:stepsize:(size(X,2)+stepsize-1),size(X,2));
         % if there is no previous R (from the end of the last chunk), we estimate it right at the first sample
         if isempty(state.last_R)
@@ -178,30 +167,28 @@ for i=1:splits
             state.last_R = eye(C);
         end
        
-
-        [Vsolved,V, D] = rasr_nonlinear_eigenspace(Xcov, C);
+        % function from manopt toolbox, adapted to this use case. manopt needs to be in the path
+        %[V1,D1] = eig(Xcov)
+        [V, D] = rasr_nonlinear_eigenspace(Xcov, C);
+        % use eigenvalues in descending order
         [D, order] = sort(reshape(diag(D),1,C));
+        % to sort the eigenvectors, here the vectors computed on the manifold
         V = V(:,order);
-        
-        % determine which components to keep (variance below directional threshold or not admissible for rejection)
-        keep = D<sum((T*V).^2) | (1:C)<(C-0.66);
 
-        %% this can be as is
+        % determine which components to keep (variance below directional threshold or not admissible for rejection)
+        keep = D < sum((T*V).^2) | (1:C)<(C-maxdims);
         trivial = all(keep);
+        
         % update the reconstruction matrix R (reconstruct artifact components using the mixing matrix)
         if ~trivial
             R = real(M*pinv(bsxfun(@times,keep',V'*M))*V');
-            disp('UPDATED R');
         else
             R = eye(C);
         end
 
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-        % do the reconstruction in intervals of length stepsize (or shorter if at the end of a chunk)
+        % do the reconstruction in intervals of length stepsize (or shorter at the end of a chunk)
         last_n = 0;
         for j=1:length(update_at)
-
             % apply the reconstruction to intermediate samples (using raised-cosine blending)
             n = update_at(j);
             if ~trivial || ~state.last_trivial

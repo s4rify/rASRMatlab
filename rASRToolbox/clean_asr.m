@@ -158,11 +158,11 @@ end
 
 % calibrate on the reference data
 disp('Estimating calibration statistics; this may take a while...');
-if exist('hlp_diskcache','file')
-    state = hlp_diskcache('filterdesign',@asr_calibrate,ref_section.data,ref_section.srate,cutoff);
-else
+% if exist('hlp_diskcache','file')
+%     state = hlp_diskcache('filterdesign',@asr_calibrate,ref_section.data,ref_section.srate,cutoff);
+% else
     state = asr_calibrate(ref_section.data,ref_section.srate,cutoff);
-end
+% end
 clear ref_section;
 
 if isempty(stepsize)

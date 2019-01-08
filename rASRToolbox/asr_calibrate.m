@@ -108,7 +108,7 @@ function state = asr_calibrate(X,srate,cutoff,blocksize,B,A,window_len,window_ov
 [C,S] = size(X);
 
 if nargin < 3 || isempty(cutoff)
-    cutoff = 5; end
+    cutoff = 3; end
 if nargin < 4 || isempty(blocksize)
     blocksize = 10; end
 blocksize = max(blocksize,ceil((C*C*S*8*3*2)/hlp_memfree));
@@ -140,13 +140,13 @@ if nargin < 6 || isempty(A) || isempty(B)
     end
 end
 if nargin < 8 || isempty(window_len)
-    window_len = 0.5; end
+    window_len = 0.1; end
 if nargin < 9 || isempty(window_overlap)
-    window_overlap = 0.66; end
+    window_overlap = 0.5; end
 if nargin < 10 || isempty(max_dropout_fraction)
     max_dropout_fraction = 0.1; end
 if nargin < 11 || isempty(min_clean_fraction)
-    min_clean_fraction = 0.25; end
+    min_clean_fraction = 0.3; end
 
 X(~isfinite(X(:))) = 0;
 
@@ -170,7 +170,11 @@ N = round(window_len*srate);
 
 % get the threshold matrix T
 fprintf('Determining per-component thresholds...');
-[V,D] = eig(M); %#ok<NASGU>
+%[V1,D1] = eig(M); %#ok<NASGU>
+[V,D] = rasr_nonlinear_eigenspace(M, C);
+[D, order] = sort(reshape(diag(D),1,C));
+V = V(:,order); 
+
 X = abs(X*V);
 for c = C:-1:1
     % compute RMS amplitude for each window...
@@ -323,7 +327,7 @@ if ~exist('min_clean_fraction','var') || isempty(min_clean_fraction)
 if ~exist('max_dropout_fraction','var') || isempty(max_dropout_fraction)
     max_dropout_fraction = 0.1; end
 if ~exist('quants','var') || isempty(quants)
-    quants = [0.022 0.6]; end
+    quants = [0.022 0.6]; end %[0.022 0.6]
 if ~exist('step_sizes','var') || isempty(step_sizes)
     step_sizes = [0.01 0.01]; end
 if ~exist('beta','var') || isempty(beta)
