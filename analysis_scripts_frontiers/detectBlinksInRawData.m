@@ -1,0 +1,66 @@
+function [] = detectBlinksInRawData(pathin, pathout)
+%
+% detectBlinksInRawData.m--
+% This script loads raw data, detects eye blinks and stores information for every dataset in a mat file in /Blinker.
+% In the mat file, look for:
+% blinkFits.maxFrame for the index of the eye blink 
+%
+%
+% Needed files: the Blinker toolbox for eeglab: http://vislab.github.io/EEG-Blinks/
+% cite as follows: Kleifges K, Bigdely-Shamlo N, Kerick S, and Robbins KA
+% BLINKER: Large-scale automated analysis of ocular indices extracted from EEG
+% (Submitted)
+%
+%
+%
+
+% Developed in Matlab 9.2.0.538062 (R2017a) on GLNXA64.
+% Sarah Blum (sarah.blum@uni-oldenburg.de), 2018-02-15 16:33
+%-------------------------------------------------------------------------
+
+% detect eye blinks in raw data and use indices in the other datasets for plotting the blinks 
+
+fn = dir([pathin, '*.set']);
+
+% run this to detect the blink indices on raw data sets
+
+for i = 1: length(fn)
+    EEG = pop_loadset('filename',fn(i).name,'filepath', pathin);
+    % perform blink detection on 100 hz sampled data
+    %EEG = pop_resample( EEG, 100);
+    % this is taken from the eegh output after using it for one dataset in the GUI
+
+    pop_blinker(EEG, struct('srate', EEG.srate, ...
+                        'stdThreshold', 2, ... %'Number of robust stds above mean for potential blinks.'
+                        'subjectID', [fn(i).name, num2str(i)],...
+                        'uniqueName', [fn(i).name, num2str(i)], ...
+                        'experiment', 'Experiment1', 'task', 'Task1', ...
+                        'startDate', '01-Jan-2016', 'startTime', '00:00:00',...
+                        'signalTypeIndicator', 'UseNumbers', ...
+                        'signalNumbers', [1 2], 'signalLabels', {{'fp1', 'fp2'}},...
+                        'excludeLabels', {{'exg5', 'exg6', 'exg7', 'exg8', 'vehicle position'}},...
+                        'dumpBlinkerStructures', true, 'showMaxDistribution', true, 'dumpBlinkImages', false, ...
+                        'verbose', false, 'dumpBlinkPositions', true, ...
+                        'fileName', fn(i).name, ...
+                        ...'blinkerSaveFile',['Blinker/', fn(i).name(1:9), '.mat'], ...
+                        'blinkerSaveFile',[pathout, EEG.setname(1:end-9), '.mat'], ...
+                        'blinkerDumpDir', 'Blinker', ...
+                        'lowCutoffHz', 1, 'highCutoffHz', 20, ...
+                        'minGoodBlinks', 10,...
+                        ...'blinkAmpRange', [1 300], ... % 'Range of blink amplitude ratios allowed for candidate signals'
+                        'blinkAmpRange', [3 50], ... % this is actually blink to noise ratio parameters and not amplitude    
+                        'goodRatioThreshold', 0.7, ... % 'Minimum number of good blinks for signal to be a candidate'
+                        'pAVRThreshold', 3, ...
+                        'correlationThresholdTop', 0.98, ... % 'Correlation threshold for linear fits of best blinks'
+                        'correlationThresholdBottom', 0.90, ... % 'Correlation threshold for linear fits of acceptable blinks'
+                        'correlationThresholdMiddle', 0.95, ...
+                        'keepSignals', true, ... % 'Keep signals that pass the blink amplitude ratio test regardless of good ratio (for combination)'
+                        'shutAmpFraction', 0.9, 'zThresholds', [0.9 2;0.98 5], ...
+                        'ICSimilarityThreshold', 0.8, ... % 'How similar and IC has to be to an eye IC to be a candidate'
+                        'ICFOMThreshold', 1, ...
+                        'numberMaxBins', 50 ... % 'Number of bins used to display histograms of blink maxima'
+                    ));
+    
+end
+
+end
