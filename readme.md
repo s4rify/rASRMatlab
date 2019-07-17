@@ -27,7 +27,9 @@ The Riemannian geometry functions are implemented in the Manopt toolbox [2] whic
 Please drop me a mail if you have any questions, fork this work to improve it or open an issue in this repository if you have any problems.
 
 ## Paper and Analysis Code
-The analysis code  can be found in the folder analysis_scripts_frontiers. Please note the readme file in there. Data will be linked shortly.
+rASR has been published in a peer-reviewed journal: https://www.frontiersin.org/articles/10.3389/fnhum.2019.00141/full?&utm_source=Email_to_authors_&utm_medium=Email&utm_content=T1_11.5e1_author&utm_campaign=Email_publication&field=&journalName=Frontiers_in_Human_Neuroscience&id=421678.
+
+The analysis code for the paper can be found in the folder analysis_scripts_frontiers. Please also note the readme file in there. Data will be linked shortly.
 
 # References
 [0] https://sccn.ucsd.edu/eeglab/index.php <br/>
