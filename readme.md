@@ -37,5 +37,5 @@ The analysis code for the paper can be found in the folder analysis_scripts_fron
 [2] https://www.manopt.org/index.html <br/>
 [3] https://www.frontiersin.org/articles/10.3389/fnhum.2019.00141/full?&utm_source=Email_to_authors_&utm_medium=Email&utm_content=T1_11.5e1_author&utm_campaign=Email_publication&field=&journalName=Frontiers_in_Human_Neuroscience&id=421678
 
-# TODO
-add license file.
+# License
+This software is published under the MIT license. 
