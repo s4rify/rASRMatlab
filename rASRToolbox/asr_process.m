@@ -192,7 +192,7 @@ for i=1:splits
             % apply the reconstruction to intermediate samples (using raised-cosine blending)
             n = update_at(j);
             if ~trivial || ~state.last_trivial
-                subrange = (last_n+1):n;
+                subrange = range((last_n+1):n);
                 blend = (1-cos(pi*(1:(n-last_n))/(n-last_n)))/2;
                 data(:,subrange) = bsxfun(@times,blend,R*data(:,subrange)) + bsxfun(@times,1-blend,state.last_R*data(:,subrange));
             end
