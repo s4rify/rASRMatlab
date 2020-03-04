@@ -36,8 +36,8 @@ function [] = import_and_cleaning()
     % load_xdf.m, eeglab
         
     %% import and pre-process data: filter
-    SME_RAW = 'sme_data/raw_single_blocks/';
-    SME_FILT = 'sme_data/filtered/';
+    SME_RAW = 'sampleData/raw/';
+    SME_FILT = 'sampleData/filtered/';
     flist = dir([SME_RAW, '*.xdf']);
     for s= 1:length(flist)
         EEG = pop_loadxdf([SME_RAW, flist(s).name] , 'streamtype', 'EEG', 'exclude_markerstreams', {});
