@@ -157,9 +157,10 @@ if any(~isfinite(X(:)))
 
 % calculate the sample covariance matrices U (averaged in blocks of blocksize successive samples)
 U = zeros(length(1:blocksize:S),C*C);
-for k=1:blocksize
-    range = min(S,k:blocksize:(S+k-1));
-    U = U + reshape(bsxfun(@times,reshape(X(range,:),[],1,C),reshape(X(range,:),[],C,1)),size(U));
+indx=1:blocksize:S;
+for k=1:length(1:blocksize:S)
+    range=indx(k):min(S,indx(k)+blocksize-1);
+    U(k,:) = reshape(X(range,:)' * X(range,:),[1 C*C]);
 end
 
 % get the mixing matrix M
